@@ -374,6 +374,22 @@ document.documentElement.setAttribute("data-theme",t);})();
   .gm.calm .gm-star, .gm.calm .gm-star svg { animation: none; }
   @media (prefers-reduced-motion: reduce) { .gm { transition: none; } }
 
+  .gm-stage.cat {
+    height: 340px; touch-action: none; cursor: grab;
+    background: linear-gradient(180deg, var(--accent-soft), var(--soft));
+  }
+  .gm-cat {
+    position: absolute; bottom: 4px; left: 50%; font-size: 46px; line-height: 1; pointer-events: none;
+    transform: translateX(-50%); transition: left .06s linear; filter: drop-shadow(0 4px 4px rgba(0,0,0,.18));
+  }
+  .gm-item { position: absolute; left: 0; top: 0; font-size: 30px; line-height: 1; pointer-events: none; will-change: transform; }
+  .gm-pop { position: absolute; font-size: 14px; font-weight: 600; pointer-events: none; animation: popUp .8s ease-out forwards; }
+  .gm-pop.good { color: var(--abs); }
+  .gm-pop.bad { color: var(--danger); }
+  .gm-emoji { display: block; font-size: min(44vmin, 250px); line-height: 1; }
+  @keyframes popUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-34px); opacity: 0; } }
+  .gm.calm .gm-pop { animation: none; opacity: 0; }
+
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
     background: var(--toast-bg); color: var(--toast-fg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px;
@@ -504,7 +520,7 @@ document.documentElement.setAttribute("data-theme",t);})();
     <p class="gm-msg" id="gmMsg"></p>
   </div>
   <div class="gm-scare" id="gmScare">
-    <div class="gm-face"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="104" r="86" fill="#ffd24a" stroke="#2b1b00" stroke-width="6"/><path d="M44 58 Q64 34 88 52" fill="none" stroke="#2b1b00" stroke-width="7" stroke-linecap="round"/><path d="M112 52 Q136 34 156 58" fill="none" stroke="#2b1b00" stroke-width="7" stroke-linecap="round"/><circle cx="68" cy="88" r="24" fill="#fff" stroke="#2b1b00" stroke-width="5"/><circle cx="132" cy="88" r="24" fill="#fff" stroke="#2b1b00" stroke-width="5"/><circle cx="72" cy="92" r="7" fill="#2b1b00"/><circle cx="128" cy="92" r="7" fill="#2b1b00"/><ellipse cx="100" cy="148" rx="34" ry="30" fill="#5a0f0f" stroke="#2b1b00" stroke-width="6"/><rect x="78" y="121" width="44" height="12" rx="3" fill="#fff"/><ellipse cx="100" cy="164" rx="20" ry="10" fill="#ff7a8a"/><path d="M168 62 q10 16 0 24 q-10 -8 0 -24z" fill="#7ec8f2" stroke="#2b1b00" stroke-width="3"/></svg></div>
+    <div class="gm-face" id="gmFace"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="104" r="86" fill="#ffd24a" stroke="#2b1b00" stroke-width="6"/><path d="M44 58 Q64 34 88 52" fill="none" stroke="#2b1b00" stroke-width="7" stroke-linecap="round"/><path d="M112 52 Q136 34 156 58" fill="none" stroke="#2b1b00" stroke-width="7" stroke-linecap="round"/><circle cx="68" cy="88" r="24" fill="#fff" stroke="#2b1b00" stroke-width="5"/><circle cx="132" cy="88" r="24" fill="#fff" stroke="#2b1b00" stroke-width="5"/><circle cx="72" cy="92" r="7" fill="#2b1b00"/><circle cx="128" cy="92" r="7" fill="#2b1b00"/><ellipse cx="100" cy="148" rx="34" ry="30" fill="#5a0f0f" stroke="#2b1b00" stroke-width="6"/><rect x="78" y="121" width="44" height="12" rx="3" fill="#fff"/><ellipse cx="100" cy="164" rx="20" ry="10" fill="#ff7a8a"/><path d="M168 62 q10 16 0 24 q-10 -8 0 -24z" fill="#7ec8f2" stroke="#2b1b00" stroke-width="3"/></svg></div>
     <div class="gm-boo" id="gmBoo">DOR!</div>
     <p class="gm-line" id="gmLine"></p>
     <button type="button" class="primary gm-done" id="gmDone">Lihat kata semangat</button>
@@ -909,40 +925,73 @@ if (me) load(); else show('auth');
 })();
 </script>
 <script>
-/* ---------- Mini game bintang + jumpscare lucu (tidak menyentuh data) ---------- */
+/* ---------- Mini game (Bintang / Kucing Rakus) + jumpscare lucu (tidak menyentuh data) ---------- */
 (function () {
   var $$ = function (s) { return document.querySelector(s); };
   var wrap = $$('#chipWrap'), chip = $$('#chip'), gm = $$('#gm'), stage = $$('#gmStage');
-  var GOAL = 5, TIME = 10, score = 0, left = TIME, running = false, allow = false;
-  var tick = null, spawn = null, scareT = null;
+  var GAMES = ['star', 'cat'];   /* ubah jadi ['cat'] kalau mau selalu Kucing Rakus */
+  var CFG = {
+    star: { goal: 5, time: 10, title: 'Tangkap bintangnya!', hint: 'Ketuk 5 bintang sebelum waktu habis.' },
+    cat:  { goal: 8, time: 20, title: 'Kucing Rakus 🐱', hint: 'Geser untuk menggerakkan kucing. Tangkap makanan, hindari yang busuk.' }
+  };
+  var mode = 'star', GOAL = 5, TIME = 10, score = 0, left = 10, lives = 3, running = false, allow = false;
+  var tick = null, spawn = null, scareT = null, raf = null, catT = null;
   var STAR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>';
-  var LINES = [
-    'Sudah dibilang jangan dipencet \uD83D\uDE24',
-    'Kaget ya? Aku juga kaget kamu benar-benar memencetnya.',
-    'Tenang, yang menakutkan itu tugasmu, bukan aku.',
-    'Kalau jantungmu masih berdetak, berarti kamu siap mengerjakan tugas.',
-    'Hadiahnya: jantungan ringan, gratis.'
-  ];
-  var BOOS = ['DOR!', 'BOO!', 'WAAA!'];
+  var FACE_DEFAULT = $$('#gmFace').innerHTML;
+  var GOOD = ['🐟', '🍩', '🍕', '🍗', '🍣'];
+  var BAD = ['🧦', '🍅', '🥾'];
+  var LINES = {
+    star: ['Sudah dibilang jangan dipencet 😤', 'Kaget ya? Aku juga kaget kamu benar-benar memencetnya.', 'Tenang, yang menakutkan itu tugasmu, bukan aku.', 'Kalau jantungmu masih berdetak, berarti kamu siap mengerjakan tugas.', 'Hadiahnya: jantungan ringan, gratis.'],
+    cat: ['Meong! Kucingnya juga ikut kaget.', 'Kucing saja bisa fokus mengejar ikan, kamu pasti bisa fokus ke tugas.', 'Sudah dibilang jangan dipencet, kucingnya jadi kaget 🙀', 'Hadiahnya: satu kucing kaget, gratis.', 'Kucingnya minta tugasmu cepat diselesaikan.']
+  };
+  var BOOS = { star: ['DOR!', 'BOO!', 'WAAA!'], cat: ['MEOW!', 'MIAUU!', 'MEONG!'] };
+
   var muted = false;
   try { muted = localStorage.getItem('gmMute') === '1'; } catch (e) {}
 
-  /* suara sederhana (WebAudio), pelan dan bisa dimatikan */
-  var ac = null;
+  /* ---------- Suara (WebAudio, berlapis, pelan) ---------- */
+  var ac = null, nbuf = null;
   function ctx() {
     if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
     if (ac && ac.state === 'suspended') ac.resume();
     return ac;
   }
-  function tone(f1, f2, dur, type, vol) {
-    if (muted) return;
-    var c = ctx(); if (!c) return;
-    var o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+  function tone(f1, f2, dur, type, vol, delay, lp) {
+    if (muted) return; var c = ctx(); if (!c) return;
+    var t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain(), out = g;
     o.type = type || 'sine';
-    o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
-    g.gain.setValueAtTime(vol || 0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(c.destination); o.start(); o.stop(t + dur);
+    o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(Math.max(1, f2), t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.05, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    if (lp) { var f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); f.connect(g); } else { o.connect(g); }
+    out.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
   }
+  function noise(dur, freq, q, vol, delay) {
+    if (muted) return; var c = ctx(); if (!c) return;
+    if (!nbuf) { nbuf = c.createBuffer(1, c.sampleRate, c.sampleRate); var d = nbuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    var t = c.currentTime + (delay || 0), s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = nbuf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start(t); s.stop(t + dur);
+  }
+  var sfx = {
+    ding: function () { tone(988, 988, 0.09, 'triangle', 0.07, 0); tone(1319, 1319, 0.24, 'triangle', 0.07, 0.08); tone(2637, 2637, 0.16, 'sine', 0.02, 0.08); },
+    crunch: function () { noise(0.06, 2200, 0.8, 0.2, 0); noise(0.07, 1500, 0.8, 0.18, 0.07); tone(520, 900, 0.1, 'triangle', 0.04, 0.02); },
+    yuck: function () { tone(320, 80, 0.35, 'sawtooth', 0.07, 0, 600); noise(0.25, 300, 1, 0.12, 0); },
+    win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, f, 0.16, 'triangle', 0.07, i * 0.09); }); },
+    lose: function () { [392, 370, 349].forEach(function (f, i) { tone(f, f * 0.97, 0.3, 'sawtooth', 0.05, i * 0.32, 900); }); tone(330, 240, 0.7, 'sawtooth', 0.05, 0.96, 700); },
+    scare: function () { noise(0.5, 800, 0.4, 0.22, 0); tone(140, 40, 0.5, 'sine', 0.22, 0); tone(1100, 700, 0.3, 'square', 0.035, 0); },
+    meow: function () {
+      if (muted) return; var c = ctx(); if (!c) return; var t = c.currentTime;
+      var o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(430, t); o.frequency.linearRampToValueAtTime(800, t + 0.16); o.frequency.linearRampToValueAtTime(460, t + 0.55);
+      f.type = 'bandpass'; f.Q.value = 3; f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(2200, t + 0.2); f.frequency.linearRampToValueAtTime(1000, t + 0.55);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      o.connect(f); f.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.65);
+      noise(0.3, 700, 0.4, 0.12, 0); tone(150, 50, 0.4, 'sine', 0.18, 0);
+    }
+  };
+
   function paintSound() {
     var b = $$('#gmSound');
     b.textContent = muted ? 'Suara: mati' : 'Suara: nyala';
@@ -958,9 +1007,14 @@ if (me) load(); else show('auth');
     $$('#gmTime').textContent = Math.ceil(left) + ' d';
     $$('#gmBar').style.width = (left / TIME * 100) + '%';
   }
+  function livesText() {
+    var h = ''; for (var i = 0; i < 3; i++) h += i < lives ? '❤️' : '🖤';
+    return 'Nyawa: ' + h + '   ·   Hindari ' + BAD.join(' ');
+  }
 
+  /* ---------- Game 1: bintang ---------- */
   function spawnStar() {
-    if (!running || stage.querySelectorAll('.gm-star:not(.hit)').length >= 3) return;
+    if (!running || mode !== 'star' || stage.querySelectorAll('.gm-star:not(.hit)').length >= 3) return;
     var r = stage.getBoundingClientRect();
     var s = document.createElement('button');
     s.type = 'button'; s.className = 'gm-star'; s.setAttribute('aria-label', 'Bintang'); s.innerHTML = STAR;
@@ -969,7 +1023,7 @@ if (me) load(); else show('auth');
     function hit(e) {
       e.preventDefault();
       if (!running || s.classList.contains('hit')) return;
-      s.classList.add('hit'); score++; tone(660, 990, 0.12, 'sine', 0.05); setUI();
+      s.classList.add('hit'); score++; sfx.ding(); setUI();
       setTimeout(function () { s.remove(); }, 300);
       if (score >= GOAL) end(true);
     }
@@ -979,15 +1033,64 @@ if (me) load(); else show('auth');
     setTimeout(function () { if (s.parentNode && !s.classList.contains('hit')) s.remove(); }, 1150 - Math.min(400, score * 80));
   }
 
-  function stopTimers() { clearInterval(tick); clearInterval(spawn); clearTimeout(scareT); }
+  /* ---------- Game 2: Kucing Rakus ---------- */
+  var cat = null, catX = 0, W = 0, H = 0, items = [], last = 0, acc = 0, elapsed = 0;
+  function placeCat() { if (cat) cat.style.left = catX + 'px'; }
+  function moveTo(clientX) {
+    if (!running || mode !== 'cat') return;
+    var r = stage.getBoundingClientRect();
+    catX = Math.max(26, Math.min(r.width - 26, clientX - r.left)); placeCat();
+  }
+  stage.addEventListener('pointermove', function (e) { moveTo(e.clientX); });
+  stage.addEventListener('pointerdown', function (e) { moveTo(e.clientX); });
+  function face(f) { if (!cat) return; cat.textContent = f; clearTimeout(catT); catT = setTimeout(function () { if (cat) cat.textContent = '🐱'; }, 450); }
+  function popText(x, y, txt, cls) {
+    var p = document.createElement('span'); p.className = 'gm-pop ' + cls; p.textContent = txt;
+    p.style.left = (x - 12) + 'px'; p.style.top = (y - 6) + 'px'; stage.appendChild(p);
+    setTimeout(function () { p.remove(); }, 850);
+  }
+  function spawnItem() {
+    var bad = Math.random() < 0.3, el = document.createElement('span');
+    el.className = 'gm-item'; el.textContent = (bad ? BAD : GOOD)[Math.floor(Math.random() * (bad ? BAD : GOOD).length)];
+    var it = { el: el, bad: bad, x: 22 + Math.random() * Math.max(0, W - 44), y: -34, v: 150 + elapsed * 9 + Math.random() * 40 };
+    stage.appendChild(el); items.push(it);
+  }
+  function loop(t) {
+    if (!running || mode !== 'cat') return;
+    var dt = Math.min(0.05, (t - last) / 1000); last = t; elapsed += dt; acc += dt;
+    if (acc > Math.max(0.45, 0.85 - elapsed * 0.02)) { acc = 0; spawnItem(); }
+    var catTop = H - 56;
+    for (var i = items.length - 1; i >= 0; i--) {
+      var it = items[i]; it.y += it.v * dt;
+      it.el.style.transform = 'translate(' + (it.x - 17) + 'px,' + it.y + 'px)';
+      if (it.y + 32 >= catTop + 8 && it.y <= H - 10 && Math.abs(it.x - catX) < 34) {
+        items.splice(i, 1); it.el.remove();
+        if (it.bad) {
+          lives--; face('🙀'); sfx.yuck(); popText(it.x, catTop, 'Iyuuh!', 'bad');
+          $$('#gmMsg').textContent = livesText();
+          if (lives <= 0) { end(false); return; }
+        } else {
+          score++; face('😻'); sfx.crunch(); popText(it.x, catTop, '+1', 'good'); setUI();
+          if (score >= GOAL) { end(true); return; }
+        }
+      } else if (it.y > H) { items.splice(i, 1); it.el.remove(); }
+    }
+    raf = requestAnimationFrame(loop);
+  }
+
+  /* ---------- Alur umum ---------- */
+  function stopTimers() { clearInterval(tick); clearInterval(spawn); clearTimeout(scareT); clearTimeout(catT); if (raf) cancelAnimationFrame(raf); raf = null; }
 
   function startGame() {
     stopTimers();
-    score = 0; left = TIME; running = true;
-    stage.innerHTML = '';
+    mode = GAMES[Math.floor(Math.random() * GAMES.length)];
+    GOAL = CFG[mode].goal; TIME = CFG[mode].time; score = 0; left = TIME; lives = 3; running = true;
+    items = []; cat = null; elapsed = 0; acc = 0;
+    stage.innerHTML = ''; stage.className = 'gm-stage' + (mode === 'cat' ? ' cat' : '');
+    $$('#gmTitle').textContent = CFG[mode].title;
     gm.classList.remove('scare');
     gm.classList.toggle('calm', !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches));
-    $$('#gmMsg').textContent = 'Ketuk ' + GOAL + ' bintang sebelum waktu habis.';
+    $$('#gmMsg').textContent = CFG[mode].hint;
     var tip = $$('#tip'); if (tip) tip.classList.remove('show');
     paintSound(); ctx(); setUI();
     gm.classList.add('open'); gm.setAttribute('aria-hidden', 'false');
@@ -996,24 +1099,35 @@ if (me) load(); else show('auth');
       left = Math.max(0, left - 0.1); setUI();
       if (left <= 0) end(false);
     }, 100);
-    spawn = setInterval(spawnStar, 650);
-    spawnStar();
+    if (mode === 'star') { spawn = setInterval(spawnStar, 650); spawnStar(); }
+    else {
+      var r = stage.getBoundingClientRect(); W = r.width; H = r.height; catX = W / 2;
+      stage.insertAdjacentHTML('beforeend', '<div class="gm-cat" id="gmCat">🐱</div>');
+      cat = $$('#gmCat'); placeCat();
+      setTimeout(function () { $$('#gmMsg').textContent = livesText(); }, 2200);
+      last = performance.now(); raf = requestAnimationFrame(loop);
+    }
     setTimeout(function () { $$('#gmSkip').focus({ preventScroll: true }); }, 50);
   }
 
   function end(win) {
     if (!running) return;
-    running = false; clearInterval(tick); clearInterval(spawn);
-    stage.innerHTML = '';
-    $$('#gmMsg').textContent = win ? 'Menang! Hadiahmu sedang dibuka...' : 'Waktu habis. Tenang, ada hadiah hiburan...';
-    scareT = setTimeout(scare, 1300);
+    running = false; stopTimers();
+    items = []; stage.querySelectorAll('.gm-star, .gm-item').forEach(function (n) { n.remove(); });
+    $$('#gmMsg').textContent = mode === 'cat'
+      ? (win ? 'Kucingnya kenyang! Hadiahmu sedang dibuka...' : 'Kucingnya mual... ada hadiah hiburan...')
+      : (win ? 'Menang! Hadiahmu sedang dibuka...' : 'Waktu habis. Tenang, ada hadiah hiburan...');
+    if (win) sfx.win(); else sfx.lose();
+    scareT = setTimeout(scare, 1500);
   }
 
   function scare() {
-    $$('#gmBoo').textContent = BOOS[Math.floor(Math.random() * BOOS.length)];
-    $$('#gmLine').textContent = LINES[Math.floor(Math.random() * LINES.length)];
+    var m = mode, boos = BOOS[m], lines = LINES[m];
+    $$('#gmFace').innerHTML = m === 'cat' ? '<span class="gm-emoji" aria-hidden="true">🙀</span>' : FACE_DEFAULT;
+    $$('#gmBoo').textContent = boos[Math.floor(Math.random() * boos.length)];
+    $$('#gmLine').textContent = lines[Math.floor(Math.random() * lines.length)];
     gm.classList.add('scare');
-    tone(180, 60, 0.45, 'sawtooth', 0.12); tone(900, 200, 0.25, 'square', 0.05);
+    if (m === 'cat') sfx.meow(); else sfx.scare();
     try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) {}
     setTimeout(function () { $$('#gmDone').focus({ preventScroll: true }); }, 1150);
   }
@@ -1022,7 +1136,7 @@ if (me) load(); else show('auth');
     stopTimers(); running = false;
     gm.classList.remove('open', 'scare'); gm.setAttribute('aria-hidden', 'true');
     document.documentElement.style.overflow = '';
-    stage.innerHTML = '';
+    stage.innerHTML = ''; items = []; cat = null;
     if (openQuotes) { allow = true; chip.click(); } else { chip.focus({ preventScroll: true }); }
   }
 
@@ -1040,7 +1154,11 @@ if (me) load(); else show('auth');
   $$('#gmSkip').addEventListener('click', function () { closeGame(true); });
   $$('#gmDone').addEventListener('click', function () { closeGame(true); });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && gm.classList.contains('open')) { e.preventDefault(); closeGame(false); }
+    if (!gm.classList.contains('open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeGame(false); return; }
+    if (running && mode === 'cat' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault(); catX = Math.max(26, Math.min(W - 26, catX + (e.key === 'ArrowLeft' ? -40 : 40))); placeCat();
+    }
   });
 })();
 </script>
