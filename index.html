@@ -224,6 +224,93 @@ document.documentElement.setAttribute("data-theme",t);})();
   html[data-theme="dark"] .theme-btn .i-moon { display: none; }
   .auth-theme { position: fixed; top: 14px; right: 16px; }
 
+  /* ---------- Chip nama: tooltip + popup semangat ---------- */
+  .chipwrap { position: relative; min-width: 0; }
+  .chip { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .chip:hover, .chip:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .chip:focus-visible { outline: none; }
+  .chip:active { transform: scale(.97); }
+
+  .tip {
+    position: absolute; top: calc(100% + 12px); right: 0; z-index: 20;
+    width: max-content; max-width: min(290px, calc(100vw - 32px));
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 14px; text-align: left;
+    box-shadow: 0 12px 32px rgba(0,0,0,.14);
+    opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top right;
+    pointer-events: none; transition: opacity .18s ease, transform .22s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .tip.show { opacity: 1; transform: none; }
+  .tip::before {
+    content: ''; position: absolute; top: -6px; right: 28px; width: 10px; height: 10px;
+    background: var(--card); border-left: 1px solid var(--line); border-top: 1px solid var(--line);
+    transform: rotate(45deg);
+  }
+  .tip-ic {
+    flex: none; width: 26px; height: 26px; border-radius: 8px; margin-top: 1px;
+    background: var(--accent-soft); color: var(--accent); display: grid; place-items: center;
+  }
+  .tip-ic svg { width: 14px; height: 14px; }
+  .tip-q { font-family: 'Fraunces', Georgia, serif; font-size: 15px; line-height: 1.4; color: var(--ink); }
+  .tip-h { margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+
+  .pop {
+    position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px;
+    background: rgba(20,20,18,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s;
+  }
+  .pop.open { opacity: 1; visibility: visible; }
+  .pop-card {
+    position: relative; width: min(420px, 100%); overflow: hidden; text-align: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: 24px;
+    padding: 30px 26px 22px; box-shadow: 0 28px 70px rgba(0,0,0,.28);
+    transform: translateY(16px) scale(.95); transition: transform .32s cubic-bezier(.2,.9,.3,1.25);
+  }
+  .pop.open .pop-card { transform: none; }
+  .pop-card::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 120px; pointer-events: none;
+    background: linear-gradient(180deg, var(--accent-soft), transparent);
+  }
+  .pop-x {
+    position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; padding: 0;
+    border-radius: 50%; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1;
+  }
+  .pop-x:hover { background: var(--soft); color: var(--ink); }
+  .pop-badge {
+    position: relative; width: 60px; height: 60px; margin: 0 auto 14px; border-radius: 20px;
+    background: var(--accent); color: var(--on-accent); display: grid; place-items: center;
+    box-shadow: 0 10px 24px var(--accent-soft);
+  }
+  .pop.open .pop-badge { animation: bob 2.6s ease-in-out infinite; }
+  .pop-badge svg { width: 28px; height: 28px; }
+  .pop-hi { position: relative; font-size: 24px; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .pop-q {
+    position: relative; margin: 12px 0 20px; min-height: 86px;
+    font-family: 'Fraunces', Georgia, serif; font-size: 19px; line-height: 1.5; color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pop-q.swap { animation: swap .35s ease; }
+  .pop-act { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+  .pop-act .ghost { padding: 12px 18px; border-radius: 10px; }
+  .pop-note { position: relative; margin: 14px 0 0; font-size: 12px; color: var(--muted); }
+
+  .spark {
+    position: absolute; left: 50%; top: 60px; width: 8px; height: 8px; border-radius: 2px; pointer-events: none;
+    animation: burst .95s cubic-bezier(.15,.8,.3,1) forwards;
+  }
+  @keyframes burst {
+    from { transform: translate(-50%,-50%) rotate(0) scale(1); opacity: 1; }
+    to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(.4); opacity: 0; }
+  }
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-5px) rotate(3deg); } }
+  @keyframes swap { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .tip, .pop, .pop-card, .chip { transition: none; }
+    .pop.open .pop-badge, .pop-q.swap, .spark { animation: none; }
+    .spark { display: none; }
+  }
+
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
     background: var(--toast-bg); color: var(--toast-fg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px;
@@ -251,7 +338,10 @@ document.documentElement.setAttribute("data-theme",t);})();
   <div class="top-in">
     <div class="brand serif">Absensi<i>.</i></div>
     <div class="user">
-      <div class="chip"><span class="avatar" id="avatar"></span><span id="uname"></span></div>
+      <div class="chipwrap" id="chipWrap">
+        <div class="chip" id="chip" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Buka kata semangat"><span class="avatar" id="avatar"></span><span id="uname"></span></div>
+        <div class="tip" id="tip" role="tooltip"><span class="tip-ic"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg></span><div><div class="tip-q" id="tipQ"></div><div class="tip-h">Klik untuk kata semangat lainnya</div></div></div>
+      </div>
       <button type="button" class="theme-btn" aria-label="Ganti mode gelap atau terang" title="Mode gelap / terang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="i-moon"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></g><g class="i-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg></button>
       <button class="ghost" id="logout">Keluar</button>
     </div>
@@ -322,6 +412,20 @@ document.documentElement.setAttribute("data-theme",t);})();
     <div class="sessions" id="sessions"></div>
   </section>
 </main>
+
+<div class="pop" id="pop" aria-hidden="true">
+  <div class="pop-card" role="dialog" aria-modal="true" aria-labelledby="popHi">
+    <button type="button" class="pop-x" id="popX" aria-label="Tutup">&times;</button>
+    <div class="pop-badge"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg></div>
+    <h3 class="pop-hi serif" id="popHi">Semangat!</h3>
+    <p class="pop-q" id="popQ"></p>
+    <div class="pop-act">
+      <button type="button" class="primary" id="popMore">Kata semangat lain</button>
+      <button type="button" class="ghost" id="popClose">Tutup</button>
+    </div>
+    <p class="pop-note">Klik di luar kotak atau tekan Esc untuk menutup.</p>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -612,6 +716,107 @@ if (me) load(); else show('auth');
     });
   });
   sync();
+})();
+</script>
+<script>
+/* ---------- Kata semangat: tooltip saat kursor di atas nama, popup saat diklik (tidak menyentuh data) ---------- */
+(function () {
+  var Q = [
+    'Satu tugas kecil yang selesai hari ini lebih baik daripada seribu rencana besar.',
+    'Mulai saja dulu. Semangat sering datang setelah kamu bergerak.',
+    'Kamu sudah sejauh ini. Tinggal sedikit lagi, jangan berhenti.',
+    'Pelan-pelan tidak apa-apa, yang penting terus berjalan.',
+    'Tugas yang kamu kerjakan hari ini membuat besok terasa lebih ringan.',
+    'Setiap centang adalah bukti bahwa kamu tidak menyerah.',
+    'Kamu tidak harus sempurna. Cukup selesaikan langkah berikutnya.',
+    'Jangan bandingkan kecepatanmu dengan orang lain. Fokus pada kemajuanmu sendiri.',
+    'Hari ini mungkin berat, tetapi kamu lebih kuat',
+    'Kerjakan sekarang, nikmati tenangnya nanti.',
+    'Sedikit demi sedikit, lama-lama tidak sedikit.',
+    'Tidak ada usaha yang sia-sia. Semuanya pasti ada hasilnya.',
+    'Bangga pada dirimu, karena kamu masih mau berusaha.',
+    'Satu sesi lagi, lalu kamu boleh tersenyum.',
+    'Yang penting bukan seberapa cepat, tetapi seberapa konsisten.',
+    'Tarik napas, minum air, lalu kerjakan satu tugas saja.',
+    'Kamu mampu!'
+  ];
+  var last = -1;
+  function pick() {
+    var i;
+    do { i = Math.floor(Math.random() * Q.length); } while (i === last && Q.length > 1);
+    last = i; return Q[i];
+  }
+  var $$ = function (s) { return document.querySelector(s); };
+  var wrap = $$('#chipWrap'), chip = $$('#chip'), tip = $$('#tip'), tipQ = $$('#tipQ');
+  var pop = $$('#pop'), popQ = $$('#popQ'), popHi = $$('#popHi');
+  var timer = null, isOpen = false;
+
+  /* tooltip */
+  function showTip() {
+    if (isOpen) return;
+    clearTimeout(timer);
+    timer = setTimeout(function () { tipQ.textContent = pick(); tip.classList.add('show'); }, 120);
+  }
+  function hideTip() { clearTimeout(timer); tip.classList.remove('show'); }
+  wrap.addEventListener('mouseenter', showTip);
+  wrap.addEventListener('mouseleave', hideTip);
+  chip.addEventListener('focus', function () { if (chip.matches(':focus-visible')) showTip(); });
+  chip.addEventListener('blur', hideTip);
+
+  /* popup */
+  function burst() {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var card = pop.querySelector('.pop-card');
+    var colors = ['var(--accent)', 'var(--abs)', 'var(--tgs)', '#e6b34a', '#e0788a'];
+    for (var i = 0; i < 16; i++) {
+      var a = (Math.PI * 2 * i) / 16 + Math.random() * 0.4, d = 70 + Math.random() * 70;
+      var sp = document.createElement('span');
+      sp.className = 'spark';
+      sp.style.background = colors[i % colors.length];
+      sp.style.setProperty('--dx', Math.cos(a) * d + 'px');
+      sp.style.setProperty('--dy', Math.sin(a) * d + 'px');
+      sp.style.setProperty('--rot', Math.round(Math.random() * 360) + 'deg');
+      card.appendChild(sp);
+      setTimeout(function (el) { return function () { el.remove(); }; }(sp), 1000);
+    }
+  }
+  function setQuote() {
+    popQ.textContent = pick();
+    popQ.classList.remove('swap'); void popQ.offsetWidth; popQ.classList.add('swap');
+  }
+  function openPop() {
+    hideTip(); isOpen = true;
+    var name = ($$('#uname') && $$('#uname').textContent) || '';
+    popHi.textContent = name ? 'Semangat, ' + name + '!' : 'Semangat!';
+    setQuote();
+    pop.classList.add('open'); pop.setAttribute('aria-hidden', 'false');
+    document.documentElement.style.overflow = 'hidden';
+    burst();
+    setTimeout(function () { $$('#popMore').focus(); }, 50);
+  }
+  function closePop() {
+    isOpen = false;
+    pop.classList.remove('open'); pop.setAttribute('aria-hidden', 'true');
+    document.documentElement.style.overflow = '';
+    chip.focus({ preventScroll: true });
+  }
+  chip.addEventListener('click', openPop);
+  chip.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPop(); }
+  });
+  $$('#popMore').addEventListener('click', function () { setQuote(); burst(); });
+  $$('#popClose').addEventListener('click', closePop);
+  $$('#popX').addEventListener('click', closePop);
+  pop.addEventListener('click', function (e) { if (e.target === pop) closePop(); });
+  document.addEventListener('keydown', function (e) {
+    if (!isOpen) return;
+    if (e.key === 'Escape') { closePop(); return; }
+    if (e.key === 'Tab') {
+      var f = pop.querySelectorAll('button'), first = f[0], lastEl = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); lastEl.focus(); }
+      else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); first.focus(); }
+    }
+  });
 })();
 </script>
 </body>
