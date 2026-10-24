@@ -311,6 +311,69 @@ document.documentElement.setAttribute("data-theme",t);})();
     .spark { display: none; }
   }
 
+  /* ---------- Mini game + jumpscare ---------- */
+  .gm {
+    position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px;
+    background: rgba(10,10,9,.62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s;
+  }
+  .gm.open { opacity: 1; visibility: visible; }
+  .gm-card {
+    width: min(460px, 100%); background: var(--card); border: 1px solid var(--line);
+    border-radius: 22px; padding: 18px 18px 16px; box-shadow: 0 28px 70px rgba(0,0,0,.3);
+  }
+  .gm-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .gm-title { font-size: 20px; }
+  .gm-tools { display: flex; gap: 6px; }
+  .gm-hud {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+    font-size: 13px; color: var(--muted); margin-bottom: 10px; font-variant-numeric: tabular-nums;
+  }
+  .gm-bar { height: 8px; background: var(--soft); border-radius: 99px; overflow: hidden; }
+  .gm-bar span { display: block; height: 100%; width: 100%; background: var(--accent); border-radius: inherit; transition: width .1s linear; }
+  .gm-stage {
+    position: relative; height: 290px; border-radius: 16px; overflow: hidden; user-select: none; touch-action: manipulation;
+    background: radial-gradient(circle at 30% 20%, var(--accent-soft), var(--soft)); border: 1px solid var(--line);
+  }
+  .gm-star {
+    position: absolute; width: 46px; height: 46px; padding: 0; border: 0; background: transparent; color: #e6b34a;
+    cursor: pointer; filter: drop-shadow(0 4px 8px rgba(230,179,74,.5)); animation: starIn .25s cubic-bezier(.2,.9,.3,1.4);
+  }
+  .gm-star svg { width: 100%; height: 100%; display: block; animation: twinkle 1s ease-in-out infinite; }
+  .gm-star.hit { animation: starHit .3s ease forwards; pointer-events: none; }
+  .gm-msg { margin: 12px 0 0; text-align: center; font-size: 13.5px; color: var(--muted); min-height: 20px; }
+
+  .gm-scare {
+    position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 20px; text-align: center; overflow: hidden;
+    background: radial-gradient(circle at 50% 40%, #5a0f0f 0%, #120505 72%);
+  }
+  .gm.scare .gm-scare { display: flex; }
+  .gm.scare .gm-card { display: none; }
+  .gm-face { width: min(52vmin, 300px); animation: zoom .22s cubic-bezier(.1,.9,.2,1.3) both, shake .12s linear .22s 8; }
+  .gm-face svg { width: 100%; height: auto; display: block; }
+  .gm-boo {
+    font-family: 'Fraunces', Georgia, serif; font-size: clamp(44px, 12vw, 88px); font-weight: 600; color: #fff;
+    letter-spacing: .02em; text-shadow: 0 6px 0 #b4443c; animation: slam .3s cubic-bezier(.2,1.6,.4,1) .12s both;
+  }
+  .gm-line { margin: 0; color: #ffe9e4; font-size: 16px; max-width: 360px; opacity: 0; animation: fadeUp .4s ease .9s forwards; }
+  .gm-done { opacity: 0; animation: fadeUp .4s ease 1.1s forwards; padding: 12px 22px; }
+
+  @keyframes starIn { from { transform: scale(0) rotate(-90deg); } to { transform: none; } }
+  @keyframes twinkle { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12) rotate(8deg); } }
+  @keyframes starHit { to { transform: scale(1.8); opacity: 0; } }
+  @keyframes zoom { from { transform: scale(.05) rotate(-12deg); } to { transform: scale(1); } }
+  @keyframes shake {
+    0% { transform: translate(0,0); } 25% { transform: translate(-8px,4px) rotate(-2deg); }
+    50% { transform: translate(6px,-5px) rotate(2deg); } 75% { transform: translate(-5px,-3px); } 100% { transform: translate(0,0); }
+  }
+  @keyframes slam { from { transform: scale(2.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .gm.calm .gm-face { animation: fadeUp .4s ease both; }
+  .gm.calm .gm-boo { animation: none; }
+  .gm.calm .gm-star, .gm.calm .gm-star svg { animation: none; }
+  @media (prefers-reduced-motion: reduce) { .gm { transition: none; } }
+
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
     background: var(--toast-bg); color: var(--toast-fg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px;
@@ -420,10 +483,31 @@ document.documentElement.setAttribute("data-theme",t);})();
     <h3 class="pop-hi serif" id="popHi">Semangat!</h3>
     <p class="pop-q" id="popQ"></p>
     <div class="pop-act">
-      <button type="button" class="primary" id="popMore">NEXT</button>
+      <button type="button" class="primary" id="popMore">Kata semangat lain</button>
       <button type="button" class="ghost" id="popClose">Tutup</button>
     </div>
-    <p class="pop-note">elyas_tzy</p>
+    <p class="pop-note">Klik di luar kotak atau tekan Esc untuk menutup.</p>
+  </div>
+</div>
+
+<div class="gm" id="gm" aria-hidden="true">
+  <div class="gm-card" role="dialog" aria-modal="true" aria-labelledby="gmTitle">
+    <div class="gm-top">
+      <h3 class="gm-title serif" id="gmTitle">Tangkap bintangnya!</h3>
+      <div class="gm-tools">
+        <button type="button" class="ghost" id="gmSound" aria-label="Suara" aria-pressed="true">Suara: nyala</button>
+        <button type="button" class="ghost" id="gmSkip">Lewati</button>
+      </div>
+    </div>
+    <div class="gm-hud"><span id="gmScore">0/5</span><div class="gm-bar"><span id="gmBar"></span></div><span id="gmTime">10 d</span></div>
+    <div class="gm-stage" id="gmStage"></div>
+    <p class="gm-msg" id="gmMsg"></p>
+  </div>
+  <div class="gm-scare" id="gmScare">
+    <div class="gm-face"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="104" r="86" fill="#ffd24a" stroke="#2b1b00" stroke-width="6"/><path d="M44 58 Q64 34 88 52" fill="none" stroke="#2b1b00" stroke-width="7" stroke-linecap="round"/><path d="M112 52 Q136 34 156 58" fill="none" stroke="#2b1b00" stroke-width="7" stroke-linecap="round"/><circle cx="68" cy="88" r="24" fill="#fff" stroke="#2b1b00" stroke-width="5"/><circle cx="132" cy="88" r="24" fill="#fff" stroke="#2b1b00" stroke-width="5"/><circle cx="72" cy="92" r="7" fill="#2b1b00"/><circle cx="128" cy="92" r="7" fill="#2b1b00"/><ellipse cx="100" cy="148" rx="34" ry="30" fill="#5a0f0f" stroke="#2b1b00" stroke-width="6"/><rect x="78" y="121" width="44" height="12" rx="3" fill="#fff"/><ellipse cx="100" cy="164" rx="20" ry="10" fill="#ff7a8a"/><path d="M168 62 q10 16 0 24 q-10 -8 0 -24z" fill="#7ec8f2" stroke="#2b1b00" stroke-width="3"/></svg></div>
+    <div class="gm-boo" id="gmBoo">DOR!</div>
+    <p class="gm-line" id="gmLine"></p>
+    <button type="button" class="primary gm-done" id="gmDone">Lihat kata semangat</button>
   </div>
 </div>
 
@@ -722,15 +806,28 @@ if (me) load(); else show('auth');
 /* ---------- Kata semangat: tooltip saat kursor di atas nama, popup saat diklik (tidak menyentuh data) ---------- */
 (function () {
   var Q = [
+    'Satu tugas kecil yang selesai hari ini lebih baik daripada seribu rencana besar.',
+    'Mulai saja dulu. Semangat sering datang setelah kamu bergerak.',
+    'Kamu sudah sejauh ini. Tinggal sedikit lagi, jangan berhenti.',
+    'Pelan-pelan tidak apa-apa, yang penting terus berjalan.',
+    'Tugas yang kamu kerjakan hari ini membuat besok terasa lebih ringan.',
+    'Setiap centang adalah bukti bahwa kamu tidak menyerah.',
+    'Lelah itu wajar. Istirahat sebentar, lalu lanjut lagi.',
+    'Kamu tidak harus sempurna. Cukup selesaikan langkah berikutnya.',
+    'Hasil yang baik datang dari kebiasaan kecil yang dilakukan setiap hari.',
     'Jangan bandingkan kecepatanmu dengan orang lain. Fokus pada kemajuanmu sendiri.',
-    'Hari ini mungkin berat, tetapi kamu lebih kuat',
-    'Sedikit demi sedikit, lama-lama tidak sedikit.',
+    'Hari ini mungkin berat, tetapi kamu lebih kuat daripada tugas-tugasmu.',
+    'Kerjakan sekarang, nikmati tenangnya nanti.',
+    'Sedikit demi sedikit, lama-lama menjadi bukit.',
     'Tidak ada usaha yang sia-sia. Semuanya pasti ada hasilnya.',
+    'Absen penuh dan tugas selesai adalah tujuan yang bisa kamu capai.',
     'Bangga pada dirimu, karena kamu masih mau berusaha.',
-    'Senyum dulu😌',
-    'Kamu mampu!',
-    'tidak perlu kata-kata yang penting bukti nyata.',
-    'SLE BEW😎'
+    'Satu sesi lagi, lalu kamu boleh tersenyum.',
+    'Yang penting bukan seberapa cepat, tetapi seberapa konsisten.',
+    'Masa depanmu sedang dibangun dari tugas-tugas hari ini.',
+    'Tarik napas, minum air, lalu kerjakan satu tugas saja.',
+    'Berani memulai adalah separuh dari keberhasilan.',
+    'Kamu mampu. Buktinya, kamu sudah melewati hari-hari sulit sebelumnya.'
   ];
   var last = -1;
   function pick() {
@@ -808,6 +905,142 @@ if (me) load(); else show('auth');
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); lastEl.focus(); }
       else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); first.focus(); }
     }
+  });
+})();
+</script>
+<script>
+/* ---------- Mini game bintang + jumpscare lucu (tidak menyentuh data) ---------- */
+(function () {
+  var $$ = function (s) { return document.querySelector(s); };
+  var wrap = $$('#chipWrap'), chip = $$('#chip'), gm = $$('#gm'), stage = $$('#gmStage');
+  var GOAL = 5, TIME = 10, score = 0, left = TIME, running = false, allow = false;
+  var tick = null, spawn = null, scareT = null;
+  var STAR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>';
+  var LINES = [
+    'Sudah dibilang jangan dipencet \uD83D\uDE24',
+    'Kaget ya? Aku juga kaget kamu benar-benar memencetnya.',
+    'Tenang, yang menakutkan itu tugasmu, bukan aku.',
+    'Kalau jantungmu masih berdetak, berarti kamu siap mengerjakan tugas.',
+    'Hadiahnya: jantungan ringan, gratis.'
+  ];
+  var BOOS = ['DOR!', 'BOO!', 'WAAA!'];
+  var muted = false;
+  try { muted = localStorage.getItem('gmMute') === '1'; } catch (e) {}
+
+  /* suara sederhana (WebAudio), pelan dan bisa dimatikan */
+  var ac = null;
+  function ctx() {
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (ac && ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function tone(f1, f2, dur, type, vol) {
+    if (muted) return;
+    var c = ctx(); if (!c) return;
+    var o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol || 0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(t + dur);
+  }
+  function paintSound() {
+    var b = $$('#gmSound');
+    b.textContent = muted ? 'Suara: mati' : 'Suara: nyala';
+    b.setAttribute('aria-pressed', String(!muted));
+  }
+  $$('#gmSound').addEventListener('click', function () {
+    muted = !muted; paintSound();
+    try { localStorage.setItem('gmMute', muted ? '1' : '0'); } catch (e) {}
+  });
+
+  function setUI() {
+    $$('#gmScore').textContent = score + '/' + GOAL;
+    $$('#gmTime').textContent = Math.ceil(left) + ' d';
+    $$('#gmBar').style.width = (left / TIME * 100) + '%';
+  }
+
+  function spawnStar() {
+    if (!running || stage.querySelectorAll('.gm-star:not(.hit)').length >= 3) return;
+    var r = stage.getBoundingClientRect();
+    var s = document.createElement('button');
+    s.type = 'button'; s.className = 'gm-star'; s.setAttribute('aria-label', 'Bintang'); s.innerHTML = STAR;
+    s.style.left = Math.round(6 + Math.random() * Math.max(0, r.width - 58)) + 'px';
+    s.style.top = Math.round(6 + Math.random() * Math.max(0, r.height - 58)) + 'px';
+    function hit(e) {
+      e.preventDefault();
+      if (!running || s.classList.contains('hit')) return;
+      s.classList.add('hit'); score++; tone(660, 990, 0.12, 'sine', 0.05); setUI();
+      setTimeout(function () { s.remove(); }, 300);
+      if (score >= GOAL) end(true);
+    }
+    s.addEventListener('pointerdown', hit);
+    s.addEventListener('click', hit);
+    stage.appendChild(s);
+    setTimeout(function () { if (s.parentNode && !s.classList.contains('hit')) s.remove(); }, 1150 - Math.min(400, score * 80));
+  }
+
+  function stopTimers() { clearInterval(tick); clearInterval(spawn); clearTimeout(scareT); }
+
+  function startGame() {
+    stopTimers();
+    score = 0; left = TIME; running = true;
+    stage.innerHTML = '';
+    gm.classList.remove('scare');
+    gm.classList.toggle('calm', !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches));
+    $$('#gmMsg').textContent = 'Ketuk ' + GOAL + ' bintang sebelum waktu habis.';
+    var tip = $$('#tip'); if (tip) tip.classList.remove('show');
+    paintSound(); ctx(); setUI();
+    gm.classList.add('open'); gm.setAttribute('aria-hidden', 'false');
+    document.documentElement.style.overflow = 'hidden';
+    tick = setInterval(function () {
+      left = Math.max(0, left - 0.1); setUI();
+      if (left <= 0) end(false);
+    }, 100);
+    spawn = setInterval(spawnStar, 650);
+    spawnStar();
+    setTimeout(function () { $$('#gmSkip').focus({ preventScroll: true }); }, 50);
+  }
+
+  function end(win) {
+    if (!running) return;
+    running = false; clearInterval(tick); clearInterval(spawn);
+    stage.innerHTML = '';
+    $$('#gmMsg').textContent = win ? 'Menang! Hadiahmu sedang dibuka...' : 'Waktu habis. Tenang, ada hadiah hiburan...';
+    scareT = setTimeout(scare, 1300);
+  }
+
+  function scare() {
+    $$('#gmBoo').textContent = BOOS[Math.floor(Math.random() * BOOS.length)];
+    $$('#gmLine').textContent = LINES[Math.floor(Math.random() * LINES.length)];
+    gm.classList.add('scare');
+    tone(180, 60, 0.45, 'sawtooth', 0.12); tone(900, 200, 0.25, 'square', 0.05);
+    try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) {}
+    setTimeout(function () { $$('#gmDone').focus({ preventScroll: true }); }, 1150);
+  }
+
+  function closeGame(openQuotes) {
+    stopTimers(); running = false;
+    gm.classList.remove('open', 'scare'); gm.setAttribute('aria-hidden', 'true');
+    document.documentElement.style.overflow = '';
+    stage.innerHTML = '';
+    if (openQuotes) { allow = true; chip.click(); } else { chip.focus({ preventScroll: true }); }
+  }
+
+  /* tahan klik/Enter pada nama (fase capture), jalankan game dulu, baru popup kata semangat */
+  wrap.addEventListener('click', function (e) {
+    if (!e.target.closest('#chip')) return;
+    if (allow) { allow = false; return; }
+    e.stopImmediatePropagation(); e.preventDefault(); startGame();
+  }, true);
+  wrap.addEventListener('keydown', function (e) {
+    if (!e.target.closest('#chip')) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.stopImmediatePropagation(); e.preventDefault(); startGame(); }
+  }, true);
+
+  $$('#gmSkip').addEventListener('click', function () { closeGame(true); });
+  $$('#gmDone').addEventListener('click', function () { closeGame(true); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && gm.classList.contains('open')) { e.preventDefault(); closeGame(false); }
   });
 })();
 </script>
